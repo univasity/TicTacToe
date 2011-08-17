@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<resources>
+    <string name="app_name">TicTacToe</string>
+    <string name="menu_exit">Exit</string>
+    <string name="menu_start">Start</string>
+    <string name="menu_restart">Restart</string>
+    <string name="menu_goback">BackToMenu</string>
+    <string name="txt_player">Player</string>
+    <string name="txt_computer">Computer</string>
+</resources>

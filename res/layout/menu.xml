@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="fill_parent"
+  android:layout_height="fill_parent"
+  android:background="@drawable/menu_bg">
+  
+  <!-- 选择图案 -->
+  <LinearLayout
+  	android:layout_width="fill_parent"
+  	android:layout_height="wrap_content"
+  	android:orientation="vertical"
+  	android:layout_alignParentBottom="true"
+  	android:paddingBottom="50dp"
+  	android:gravity="center_horizontal">
+  	<LinearLayout
+  		android:layout_width="fill_parent"
+  		android:layout_height="wrap_content"
+  		android:orientation="horizontal"
+  		android:gravity="center">
+  		
+  		<ImageView
+  			android:layout_width="wrap_content"
+  			android:layout_height="wrap_content"
+  			android:src="@drawable/circle"
+  		/>
+  		<RadioButton android:id="@+id/circle_point"
+  			android:layout_width="wrap_content"
+  			android:layout_height="wrap_content"
+  		/>
+  		
+  	</LinearLayout>
+  	<LinearLayout
+  		android:layout_width="fill_parent"
+  		android:layout_height="wrap_content"
+  		android:orientation="horizontal"
+  		android:gravity="center">
+  		
+  		<ImageView
+  			android:layout_width="wrap_content"
+  			android:layout_height="wrap_content"
+  			android:src="@drawable/cross"
+  		/>
+  		<RadioButton android:id="@+id/cross_point"
+  			android:layout_width="wrap_content"
+  			android:layout_height="wrap_content"
+  		/>
+  		
+  	</LinearLayout>
+  </LinearLayout>
+  
+  <!-- 功能菜单栏 -->
+  <LinearLayout 
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content" 
+		android:orientation="horizontal"
+		android:layout_alignParentBottom="true">
+		<!-- 退出 -->
+		<TextView android:id="@+id/exit_btn" 
+			style="@style/menu_button_theme"
+			android:text="@string/menu_exit"  
+		/>
+		<!-- 开始游戏 -->
+		<TextView android:id="@+id/start_btn"
+			style="@style/menu_button_theme"
+			android:text="@string/menu_start" 
+		/>
+	</LinearLayout>
+  
+</RelativeLayout>
