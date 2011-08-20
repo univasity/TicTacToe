@@ -4,6 +4,8 @@ import java.util.Random;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.content.DialogInterface;
+import android.content.DialogInterface.OnDismissListener;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -22,50 +24,45 @@ public class GameActivity extends Activity implements OnTouchListener, OnClickLi
 
 	static final String LOG_TAG = GameActivity.class.getSimpleName();
 	
-	static final int PlayerTuns = 1;
-	static final int ComputerTuns = 2;
-	
-	static final int NotWin = 0;
-	static final int HorizontalWinRow1 = 1;
-	static final int HorizontalWinRow2 = 2;
-	static final int HorizontalWinRow3 = 3;
-	static final int VerticalWinCol1 = 4;
-	static final int VerticalWinCol2 = 5;
-	static final int VerticalWinCol3 = 6;
-	static final int LeftCrossWin = 7;
-	static final int RightCrossWin = 8;
-	static final int Deuce = 9;
-	
 	private ImageView[] points;
-	private int[] boardMap;
 	
-	private int curTurns = PlayerTuns;
 	private int selectPoint;
 	
 	private TextView playerTurnsView;
 	private TextView computerTurnsView;
+	
+	private TextView menuBtnView;
+	private TextView restartBtnView;
+	
+	private Animation shinningAnim;
 	
 	private ImageView resultView;
 	
 	private Random rnd;
 	private boolean isGameOver;
 	
+	private Board board;
+	private int PlayerTurn = Board.PLAYER1_TURN;
+	private int ComputerTurn = Board.PLAYER2_TURN;
+	
 	private final int MSG_AUTOMOVE = 0x001;
 	
 	private Handler mHandler = new Handler(){
 		public void handleMessage(Message msg){
 			if(msg.what==MSG_AUTOMOVE){
-				int rivalId = curTurns==PlayerTuns?Controller.ComputerId:Controller.PlayerId;
-				int selfId = curTurns==PlayerTuns?Controller.PlayerId:Controller.ComputerId;
-				int restId = Controller.RestId;
-				int nextStep = Controller.getNextStep(boardMap, rivalId, selfId, restId);
+				int nextStep = board.getNextStep();
 				Log.i(LOG_TAG, "nextStep..."+nextStep);
 				if(nextStep!=-1){
-					points[nextStep].setImageResource(curTurns==PlayerTuns?getPlayerPointId():getComputerPointId());
-					boardMap[nextStep] = curTurns==PlayerTuns?Controller.PlayerId:Controller.ComputerId;
-					checkWin();
-					if(!isGameOver){
-						notifyForNextTurns();
+					int curTurn = board.getTurn();
+					if(board.setDataAt(nextStep)){
+						points[nextStep].setImageResource(curTurn==PlayerTurn?getPlayerPointId():getComputerPointId());
+						int state = board.checkWin();
+						if(state==Board.NotWin){
+							notifyForNextTurns();
+						}else{
+							isGameOver = true;
+							showWinResult(state);
+						}
 					}
 				}
 			}
@@ -81,8 +78,8 @@ public class GameActivity extends Activity implements OnTouchListener, OnClickLi
 	}
 
 	private void initGame(Intent intent) {
-		selectPoint = intent.getIntExtra("point", Controller.CirclePoint);
-		if(selectPoint==Controller.CirclePoint){
+		selectPoint = intent.getIntExtra("point", Define.CirclePoint);
+		if(selectPoint==Define.CirclePoint){
 			((ImageView)findViewById(R.id.player_point)).setImageResource(R.drawable.circle);
 			((ImageView)findViewById(R.id.computer_point)).setImageResource(R.drawable.cross);
 		}else{
@@ -91,6 +88,7 @@ public class GameActivity extends Activity implements OnTouchListener, OnClickLi
 		}
 		
 		//
+		board = new MyBoard(Define.BoardSize);
 		points = new ImageView[9];
 		for(int i=0; i<9; i++){
 			points[i] = (ImageView)findViewById(R.id.pos0+i);
@@ -102,8 +100,12 @@ public class GameActivity extends Activity implements OnTouchListener, OnClickLi
 		//
 		playerTurnsView = (TextView)findViewById(R.id.player_turns);
 		computerTurnsView = (TextView)findViewById(R.id.computer_turns);
-		findViewById(R.id.menu_btn).setOnClickListener(this);
-		findViewById(R.id.restart_btn).setOnClickListener(this);
+		menuBtnView = (TextView)findViewById(R.id.menu_btn);
+		menuBtnView.setOnClickListener(this);
+		restartBtnView = (TextView)findViewById(R.id.restart_btn);
+		restartBtnView.setOnClickListener(this);
+		
+		shinningAnim = AnimationUtils.loadAnimation(this, R.anim.shining);
 		
 		restartGame();
 	}
@@ -117,14 +119,18 @@ public class GameActivity extends Activity implements OnTouchListener, OnClickLi
 			int id = v.getId();
 			if(id>=R.id.pos0 && id<R.id.pos0+9)
 			{
-				if(curTurns==PlayerTuns 
-				&& boardMap[id-R.id.pos0]==0)
+				if(board.getTurn()==PlayerTurn)
 				{
-					((ImageView)v).setImageResource(curTurns==PlayerTuns?getPlayerPointId():getComputerPointId());
-					boardMap[id-R.id.pos0] = curTurns==PlayerTuns?Controller.PlayerId:Controller.ComputerId;
-					checkWin();
-					if(!isGameOver){
-						notifyForNextTurns();
+					((ImageView)v).setImageResource(getPlayerPointId());
+					if(board.setDataAt(id-R.id.pos0)){
+						points[id-R.id.pos0].setImageResource(getPlayerPointId());
+						int state = board.checkWin();
+						if(state==Board.NotWin){
+							notifyForNextTurns();
+						}else{
+							isGameOver = true;
+							showWinResult(state);
+						}
 					}
 					return true;
 				}
@@ -134,9 +140,8 @@ public class GameActivity extends Activity implements OnTouchListener, OnClickLi
 	}
 	
 	private void notifyForNextTurns() {
-		curTurns = curTurns==PlayerTuns?ComputerTuns:PlayerTuns;
-		Animation shinningAnim = AnimationUtils.loadAnimation(this, R.anim.shining);
-		if(curTurns==PlayerTuns){
+		board.changeTurn();
+		if(board.getTurn()==PlayerTurn){
 			computerTurnsView.clearAnimation();
 			playerTurnsView.startAnimation(shinningAnim);
 		}else{
@@ -147,76 +152,43 @@ public class GameActivity extends Activity implements OnTouchListener, OnClickLi
 			mHandler.sendEmptyMessageDelayed(MSG_AUTOMOVE, delay);
 		}
 	}
-
-	private void checkWin() {
-		int winCode = checkWin(1);
-		boolean playerWin = false;
-		if(winCode!=NotWin){
-			// 玩家胜
-			Log.d(LOG_TAG, "玩家胜!");
-			playerWin = true;
-		}else{
-			winCode = checkWin(2);
-			if(winCode!=NotWin){
-				// 电脑胜
-				Log.d(LOG_TAG, "电脑胜!");
-				playerWin = false;
-			}
-		}
-		if(winCode==NotWin){
-			// 检测是否平局
-			winCode = Deuce;
-			for(int state:boardMap){
-				if(state==0){
-					winCode = NotWin;
-					break;
-				}
-			}
-		}
-		if(winCode==NotWin){
-			isGameOver = false;
-		}else{
-			showWinResult(winCode, playerWin);
-			isGameOver = true;
-		}
-	}
 	
-	private void showWinResult(int winCode, boolean playerWin) {
+	private void showWinResult(int winCode) {
 		int resId = 0;
 		switch(winCode){
-		case HorizontalWinRow1:
+		case Board.HorizontalWinRow1:
 			resId = R.drawable.line_h1;
 			break;
 			
-		case HorizontalWinRow2:
+		case Board.HorizontalWinRow2:
 			resId = R.drawable.line_h2;
 			break;
 			
-		case HorizontalWinRow3:
+		case Board.HorizontalWinRow3:
 			resId = R.drawable.line_h3;
 			break;
 			
-		case VerticalWinCol1:
+		case Board.VerticalWinCol1:
 			resId = R.drawable.line_v1;
 			break;
 			
-		case VerticalWinCol2:
+		case Board.VerticalWinCol2:
 			resId = R.drawable.line_v2;
 			break;
 			
-		case VerticalWinCol3:
+		case Board.VerticalWinCol3:
 			resId = R.drawable.line_v3;
 			break;
 			
-		case LeftCrossWin:
+		case Board.LeftCrossWin:
 			resId = R.drawable.line_lcross;
 			break;
 			
-		case RightCrossWin:
+		case Board.RightCrossWin:
 			resId = R.drawable.line_rcross;
 			break;
 			
-		case Deuce:
+		case Board.Deuce:
 			resId = -1;
 			break;
 		}
@@ -226,103 +198,36 @@ public class GameActivity extends Activity implements OnTouchListener, OnClickLi
 			resultView.setVisibility(View.VISIBLE);
 		}
 		
-		final Dialog dialog = new Dialog(this, android.R.style.Theme_Dialog);
-		dialog.setContentView(R.layout.result_dialog);
-		ImageView imgView = (ImageView)dialog.findViewById(R.id.img);
-		TextView txtView = (TextView)dialog.findViewById(R.id.txt);
-		if(winCode==Deuce){
-			txtView.setText(R.string.txt_deuce);
+		Dialog dialog = null;
+		if(winCode==Board.Deuce){
+			dialog = Utils.createDialog(this, -1, R.string.txt_deuce);
 		}else{
-			if(curTurns==PlayerTuns){
+			if(board.getTurn()==PlayerTurn){
 				// win
-				txtView.setText(R.string.txt_you_win);
+				dialog = Utils.createDialog(this, -1, R.string.txt_you_win);
 			}else{
 				// lose
-				txtView.setText(R.string.txt_you_lose);
+				dialog = Utils.createDialog(this, -1, R.string.txt_you_lose);
 			}
 		}
-		(dialog.findViewById(R.id.dialog)).setOnTouchListener(new OnTouchListener() {
+		dialog.setOnDismissListener(new OnDismissListener() {
 			
 			@Override
-			public boolean onTouch(View v, MotionEvent event) {
-				if(event.getAction()==MotionEvent.ACTION_DOWN){
-					dialog.dismiss();
-				}
-				return false;
+			public void onDismiss(DialogInterface dialog) {
+				playerTurnsView.clearAnimation();
+				computerTurnsView.clearAnimation();
+				restartBtnView.startAnimation(shinningAnim);
 			}
 		});
 		dialog.show();
 	}
 
-	private int checkWin(int id){
-		boolean isWin = false;
-		// 横
-		for(int row=0; row<3; row++){
-			isWin = true;
-			for(int col=0; col<3; col++){
-				if(boardMap[row*3+col]!=id){
-					isWin = false;
-				}
-			}
-			if(isWin){
-				switch(row){
-				case 0:
-					return HorizontalWinRow1;
-				case 1:
-					return HorizontalWinRow2;
-				case 2:
-					return HorizontalWinRow3;
-				}
-			}
-		}
-		// 纵
-		for(int col=0; col<3; col++){
-			isWin = true;
-			for(int row=0; row<3; row++){
-				if(boardMap[row*3+col]!=id){
-					isWin = false;
-				}
-			}
-			if(isWin){
-				switch(col){
-				case 0:
-					return VerticalWinCol1;
-				case 1:
-					return VerticalWinCol2;
-				case 2:
-					return VerticalWinCol3;
-				}
-			}
-		}
-		// 交叉
-		isWin = true;
-		for(int i=0; i<3; i++){
-			if(boardMap[i*3+i]!=id){
-				isWin = false;
-			}
-		}
-		if(isWin){
-			return LeftCrossWin;
-		}
-		isWin = true;
-		for(int i=0; i<3; i++){
-			if(boardMap[(3-i-1)*3+i]!=id){
-				isWin = false;
-			}
-		}
-		if(isWin){
-			return RightCrossWin;
-		}
-		
-		return NotWin;
-	}
-
 	private int getPlayerPointId(){
-		return selectPoint==Controller.CirclePoint?R.drawable.circle:R.drawable.cross;
+		return selectPoint==Define.CirclePoint?R.drawable.circle:R.drawable.cross;
 	}
 	
 	private int getComputerPointId(){
-		return selectPoint==Controller.CirclePoint?R.drawable.cross:R.drawable.circle;
+		return selectPoint==Define.CirclePoint?R.drawable.cross:R.drawable.circle;
 	}
 	
 	/**
@@ -330,14 +235,15 @@ public class GameActivity extends Activity implements OnTouchListener, OnClickLi
 	 */
 	private void restartGame(){
 		isGameOver = false;
+		restartBtnView.clearAnimation();
 		resultView.setVisibility(View.GONE);
 		for(ImageView view:points){
 			view.setImageDrawable(null);
 		}
-		boardMap = new int[9];
+		board.init();
 		// 随机选取谁先下
 		rnd = new Random(System.currentTimeMillis());
-		curTurns = (rnd.nextInt()>>>1)%2==0?PlayerTuns:ComputerTuns;
+		board.setTurn((rnd.nextInt()>>>1)%2==0?PlayerTurn:ComputerTurn);
 		notifyForNextTurns();
 	}
 	
@@ -345,7 +251,7 @@ public class GameActivity extends Activity implements OnTouchListener, OnClickLi
 	 * 返回主菜单
 	 */
 	private void backToMenu(){
-		Controller.startMenuActivity(this);
+		Utils.startMenuActivity(this);
 		finish();
 	}
 

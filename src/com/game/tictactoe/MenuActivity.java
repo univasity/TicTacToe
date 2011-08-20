@@ -22,7 +22,7 @@ public class MenuActivity extends Activity implements OnClickListener {
 			
 			if(isChecked){
 				int curId = buttonView.getId();
-				selectPoint = curId==R.id.circle_point?Controller.CirclePoint:Controller.CrossPoint;
+				selectPoint = curId==R.id.circle_point?Define.CirclePoint:Define.CrossPoint;
 				for(int id : RadioButtonIds){
 					if(id!=curId){
 						((RadioButton)findViewById(id)).setChecked(false);
@@ -52,7 +52,7 @@ public class MenuActivity extends Activity implements OnClickListener {
 			break;
 			
 		case R.id.start_btn:
-			Controller.startGameActivity(this, selectPoint);
+			Utils.startGameActivity(this, selectPoint);
 			break;
 		}
 	}

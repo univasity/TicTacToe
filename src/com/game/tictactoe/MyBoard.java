@@ -3,27 +3,16 @@ package com.game.tictactoe;
 import java.util.ArrayList;
 import java.util.Random;
 
+import android.util.Log;
+
 public class MyBoard extends Board {
 	
-	int rowStart;
-	int rowEnd;
-	int colStart;
-	int colEnd;
-	int leftCross;
-	int rightCross;
-	int totalNum;
+	static final String LOG_TAG = MyBoard.class.getSimpleName();
 	
 	private Random rnd;
 	
 	public MyBoard(int size) {
 		super(size);
-		rowStart = 0;
-		rowEnd = rowStart+size;
-		colStart = rowEnd+1;
-		colEnd = colStart+size;
-		leftCross = colEnd+1;
-		rightCross = leftCross+1;
-		totalNum = rightCross+1;
 		
 		rnd = new Random(System.currentTimeMillis());
 	}
@@ -33,144 +22,150 @@ public class MyBoard extends Board {
 	}
 	
 	public int getNextStep(){
-		analyzeDataMap();
-		
-		int nextStep = -1;
-		
-		int matchPoint = (size-1);
-		
-		/**
-		 * 找必胜点
-		 */
-		nextStep = getGamePointPos(selfStates, rivalStates, matchPoint); 
-		if(nextStep!=-1){
-			return nextStep;
-		}
-		
-		/**
-		 * 防守
-		 */
-		nextStep = getGamePointPos(rivalStates, selfStates, matchPoint); 
-		if(nextStep!=-1){
-			return nextStep;
-		}
-		
-		/**
-		 * 随机选择
-		 */
-		int maxSize = 0;
-		int maxIndex = -1;
-		for(int i=restMap.length-1; i>=0; i--){
-			if(restMap[i]!=null && restMap[i].size()>maxSize){
-				maxSize = restMap[i].size();
-				maxIndex = i;
-			}
-		}
-		if(maxIndex!=-1){
-			return restMap[maxIndex].get(0);
-		}
-		
-		return -1;
-	}
-	
-	private int[] selfStates;
-	private int[] rivalStates;
-	private ArrayList<Integer>[] restMap = new ArrayList[8];
-	
-	private void analyzeDataMap(){
 		
 		int selfId = curTurn==PLAYER1_TURN?PLAYER1_ID:PLAYER2_ID;
 		int rivalId = selfId==PLAYER1_ID?PLAYER2_ID:PLAYER1_ID;
 		
-		//
-		selfStates = new int[totalNum];
-		rivalStates = new int[totalNum];
+		int matchPoint = size-1;
 		
-		int stateIndex = -1;
+		// 必胜
+		for(int at : findMatch(dataMap, selfId, matchPoint)){
+			int[] winPos = findRestPosition(dataMap, at, EMPTY_DATA);
+			Log.i(LOG_TAG, "win...At:"+at+"..len:"+winPos.length);
+			if(winPos!=null && winPos.length!=0){
+				Log.i(LOG_TAG, "win..."+winPos[0]);
+				return winPos[0];
+			}
+		}
 		
+		// 防守
+		for(int at : findMatch(dataMap, rivalId, matchPoint)){
+			int[] warning = findRestPosition(dataMap, at, EMPTY_DATA);
+			Log.i(LOG_TAG, "lose...At:"+at+"..len:"+warning.length);
+			if(warning!=null && warning.length!=0){
+				Log.i(LOG_TAG, "lose..."+warning[0]);
+				return warning[0];
+			}
+		}
+		
+		// 随机进攻
+		for(int at : findMatch(dataMap, selfId, 1)){
+			int[] restPos = findRestPosition(dataMap, at, EMPTY_DATA);
+			if(restPos!=null && restPos.length!=0){
+				Log.i(LOG_TAG, "rnd_1..."+restPos[0]);
+				return restPos[0];
+			}
+		}
+		ArrayList<Integer> restMap = new ArrayList<Integer>();
+		for(int i=dataMap.length-1; i>=0; i--){
+			if(dataMap[i]==EMPTY_DATA){
+				restMap.add(i);
+			}
+		}
+		return restMap.get((rnd.nextInt()>>>1)%restMap.size());
+	}
+
+	@Override
+	public int checkWin() {
+		int[] result = null;
+		// Player1
+		result = findMatch(dataMap, PLAYER1_ID, size);
+		if(result!=null && result.length>0){
+			return result[0];
+		}
+		// Player2
+		result = findMatch(dataMap, PLAYER2_ID, size);
+		if(result!=null && result.length>0){
+			return result[0];
+		}
+		// 检测是否满了
+		for(int data : dataMap){
+			if(data==EMPTY_DATA){
+				return NotWin;
+			}
+		}
+		return Deuce;
+	}
+	
+	/**
+	 * 找到与给定ID的数量匹配的行、列或交叉
+	 * @param boardMap
+	 * @param targetId
+	 * @param matchNum
+	 * @return
+	 */
+	private int[] findMatch(int[] boardMap, int targetId, int matchNum){
+		ArrayList<Integer> matches = new ArrayList<Integer>();
+		int counter = 0;
 		// 横
 		for(int row=0; row<size; row++){
-			stateIndex++;
+			counter = 0;
 			for(int col=0; col<size; col++){
-				int index = size*row+col;
-				int data = dataMap[index];
-				if(data==selfId){
-					selfStates[stateIndex]++;
-				}else
-				if(data==rivalId){
-					rivalStates[stateIndex]++;
-				}else
-				if(data==EMPTY_DATA){
-					if(restMap[stateIndex]==null){
-						restMap[stateIndex] = new ArrayList<Integer>();
-					}
-					restMap[stateIndex].add(index);
+				if(boardMap[row*size+col]==targetId){
+					counter++;
+				}
+			}
+			if(counter==matchNum){
+				switch(row){
+				case 0:
+					matches.add(HorizontalWinRow1);
+					break;
+				case 1:
+					matches.add(HorizontalWinRow2);
+					break;
+				case 2:
+					matches.add(HorizontalWinRow3);
+					break;
 				}
 			}
 		}
 		// 纵
 		for(int col=0; col<size; col++){
-			stateIndex++;
+			counter = 0;
 			for(int row=0; row<size; row++){
-				int index = size*row+col;
-				int data = dataMap[index];
-				if(data==selfId){
-					selfStates[stateIndex]++;
-				}else
-				if(data==rivalId){
-					rivalStates[stateIndex]++;
-				}else
-				if(data==EMPTY_DATA){
-					if(restMap[stateIndex]==null){
-						restMap[stateIndex] = new ArrayList<Integer>();
-					}
-					restMap[stateIndex].add(index);
+				if(boardMap[row*size+col]==targetId){
+					counter++;
+				}
+			}
+			if(counter==matchNum){
+				switch(col){
+				case 0:
+					matches.add(VerticalWinCol1);
+					break;
+				case 1:
+					matches.add(VerticalWinCol2);
+					break;
+				case 2:
+					matches.add(VerticalWinCol3);
+					break;
 				}
 			}
 		}
 		// 交叉
-		stateIndex++;
+		counter = 0;
 		for(int i=0; i<size; i++){
-			int index = size*i+i;
-			int data = dataMap[index];
-			if(data==selfId){
-				selfStates[stateIndex]++;
-			}else
-			if(data==rivalId){
-				rivalStates[stateIndex]++;
-			}else
-			if(data==EMPTY_DATA){
-				if(restMap[stateIndex]==null){
-					restMap[stateIndex] = new ArrayList<Integer>();
-				}
-				restMap[stateIndex].add(index);
+			if(boardMap[i*size+i]==targetId){
+				counter++;
 			}
 		}
-		stateIndex++;
+		if(counter==matchNum){
+			matches.add(LeftCrossWin);
+		}
+		counter = 0;
 		for(int i=0; i<size; i++){
-			int index = size*(size-i-1)+i;
-			int data = dataMap[index];
-			if(data==selfId){
-				selfStates[stateIndex]++;
-			}else
-			if(data==rivalId){
-				rivalStates[stateIndex]++;
-			}else
-			if(data==EMPTY_DATA){
-				if(restMap[stateIndex]==null){
-					restMap[stateIndex] = new ArrayList<Integer>();
-				}
-				restMap[stateIndex].add(index);
+			if(boardMap[(size-i-1)*size+i]==targetId){
+				counter++;
 			}
 		}
-	}
-	
-	private int findRestPosition(int at){
-		int[] restPos = findRestPosition(dataMap, at, EMPTY_DATA);
-		if(restPos!=null && restPos.length>0){
-			return restPos[(rnd.nextInt()>>>1)%restPos.length];
+		if(counter==matchNum){
+			matches.add(RightCrossWin);
 		}
-		return -1;
+		
+		int[] result = new int[matches.size()];
+		for(int i=result.length-1; i>=0; i--){
+			result[i] = matches.get(i);
+		}
+		return result;
 	}
 	
 	/**
@@ -182,37 +177,39 @@ public class MyBoard extends Board {
 	 */
 	private int[] findRestPosition(int[] boardMap, int at, int restId){
 		ArrayList<Integer> result = new ArrayList<Integer>();
-		if(at>=rowStart && at<=rowEnd){
-			int row = at-rowStart;
+		if(at==HorizontalWinRow1 || at==HorizontalWinRow2 || at==HorizontalWinRow3){
+			int row = at==HorizontalWinRow1?0:(at==HorizontalWinRow2?1:2);
+			Log.i(LOG_TAG, "findRest...row"+row);
 			for(int col=0; col<size; col++){
-				int index = size*row+col;
+				int index = row*size+col;
 				if(boardMap[index]==restId){
-					result.add(boardMap[index]);
+					Log.i(LOG_TAG, "findRest...index"+index+"..."+boardMap[index]);
+					result.add(index);
 				}
 			}
 		}else
-		if(at>=colStart && at<=colEnd){
-			int col = at-colStart;
+		if(at==VerticalWinCol1 || at==VerticalWinCol2 || at==VerticalWinCol3){
+			int col = at==VerticalWinCol1?0:(at==VerticalWinCol2?1:2);
 			for(int row=0; row<size; row++){
-				int index = size*row+col;
+				int index = row*size+col;
 				if(boardMap[index]==restId){
-					result.add(boardMap[index]);
+					result.add(index);
 				}
 			}
 		}else
-		if(at==leftCross){
+		if(at==LeftCrossWin){
 			for(int i=0; i<size; i++){
-				int index = size*i+i;
+				int index = i*size+i;
 				if(boardMap[index]==restId){
-					result.add(boardMap[index]);
+					result.add(index);
 				}
 			}
 		}else
-		if(at==rightCross){
+		if(at==RightCrossWin){
 			for(int i=0; i<size; i++){
-				int index = size*(size-i-1)+i;
+				int index = (size-i-1)*size+i;
 				if(boardMap[index]==restId){
-					result.add(boardMap[index]);
+					result.add(index);
 				}
 			}
 		}
@@ -222,90 +219,6 @@ public class MyBoard extends Board {
 			array[i] = result.get(i);
 		}
 		return array;
-	}
-	
-	private int getGamePointPos(int[] selfStates, int[] rivalStates, int matchPoint){
-		int pos = 0;
-		// 横
-		for(int i=rowStart; i<rowEnd; i++){
-			if(selfStates[i]==matchPoint && rivalStates[i]==0){
-				pos = findRestPosition(i);
-				if(pos!=-1){
-					return pos;
-				}
-			}
-		}
-		// 纵
-		for(int j=colStart; j<colEnd; j++){
-			if(selfStates[j]==matchPoint && rivalStates[j]==0){
-				pos = findRestPosition(j);
-				if(pos!=-1){
-					return pos;
-				}
-			}
-		}
-		// 交叉
-		if(selfStates[leftCross]==matchPoint && rivalStates[leftCross]==0){
-			pos = findRestPosition(leftCross);
-			if(pos!=-1){
-				return pos;
-			}
-		}
-		if(selfStates[rightCross]==matchPoint && rivalStates[rightCross]==0){
-			pos = findRestPosition(rightCross);
-			if(pos!=-1){
-				return pos;
-			}
-		}
-		return -1;
-	}
-
-	@Override
-	public int checkWin() {
-		// 横
-		for(int row=rowStart; row<rowEnd; row++){
-			if(selfStates[row]==size || rivalStates[row]==size){
-				switch(row-rowStart){
-				case 0:
-					return HorizontalWinRow1;
-				case 1:
-					return HorizontalWinRow2;
-				case 2:
-					return HorizontalWinRow3;
-				} 
-			}
-		}
-		// 纵
-		for(int col=colStart; col<colEnd; col++){
-			if(selfStates[col]==size || rivalStates[col]==size){
-				switch(col-colStart){
-				case 0:
-					return VerticalWinCol1;
-				case 1:
-					return VerticalWinCol2;
-				case 2:
-					return VerticalWinCol3;
-				} 
-			}
-		}
-		// 交叉
-		if(selfStates[leftCross]==size || rivalStates[leftCross]==size){
-			return LeftCrossWin;
-		}
-		if(selfStates[rightCross]==size || rivalStates[rightCross]==size){
-			return RightCrossWin;
-		}
-		
-		// 检测是否满了
-		if(restMap.length!=0){
-			for(ArrayList sub : restMap){
-				if(sub.size()>0){
-					return NotWin;
-				}
-			}
-		}
-		
-		return Deuce;
 	}
 	
 }

@@ -47,7 +47,7 @@ public class SplashActivity extends Activity {
     	if(isAnimationFinished){
     		if(event.getAction()==MotionEvent.ACTION_DOWN){
     			// 动画结束，跳转到菜单
-        		Controller.startMenuActivity(this);
+        		Utils.startMenuActivity(this);
         		finish();
         		return true;
     		}

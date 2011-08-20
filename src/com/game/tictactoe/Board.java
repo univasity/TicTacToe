@@ -15,22 +15,22 @@ public abstract class Board {
 	static final int PLAYER1_ID = 1;
 	static final int PLAYER2_ID = 2;
 	
-	static final int NotWin = 0;
-	static final int HorizontalWinRow1 = 1;
-	static final int HorizontalWinRow2 = 2;
-	static final int HorizontalWinRow3 = 3;
-	static final int VerticalWinCol1 = 4;
-	static final int VerticalWinCol2 = 5;
-	static final int VerticalWinCol3 = 6;
-	static final int LeftCrossWin = 7;
-	static final int RightCrossWin = 8;
-	static final int Deuce = 9;
+	public static final int NotWin = 0;
+	public static final int HorizontalWinRow1 = 1;
+	public static final int HorizontalWinRow2 = 2;
+	public static final int HorizontalWinRow3 = 3;
+	public static final int VerticalWinCol1 = 4;
+	public static final int VerticalWinCol2 = 5;
+	public static final int VerticalWinCol3 = 6;
+	public static final int LeftCrossWin = 7;
+	public static final int RightCrossWin = 8;
+	public static final int Deuce = 9;
 	
 	public Board(int size) {
 		this.size = size;
 	}
 
-	public void init(){
+	public synchronized void init(){
 		if(dataMap==null){
 			dataMap = new int[size*size];
 		}else{
@@ -40,19 +40,19 @@ public abstract class Board {
 		}
 	}
 	
-	public void setTurn(int turn){
+	public synchronized void setTurn(int turn){
 		if(turn!=PLAYER1_TURN & turn!=PLAYER2_TURN){
 			throw new IllegalArgumentException("not support turn:"+turn);
 		}
 		curTurn = turn;
 	}
 	
-	public int getTurn(){
+	public synchronized int getTurn(){
 		return curTurn;
 	}
 	
-	public boolean setDataAt(int row, int col){
-		int index = size*row+col;
+	public synchronized boolean setDataAt(int index){
+//		int index = size*row+col;
 		if(index<0 || index>=dataMap.length){
 			return false;
 		}
@@ -60,11 +60,10 @@ public abstract class Board {
 			return false;
 		}
 		dataMap[index] = curTurn==PLAYER1_TURN?PLAYER1_ID:PLAYER2_ID;
-		changeTurn();
 		return true;
 	}
 	
-	private void changeTurn(){
+	public synchronized void changeTurn(){
 		curTurn = curTurn==PLAYER1_TURN?PLAYER2_TURN:PLAYER1_TURN;
 	}
 	
