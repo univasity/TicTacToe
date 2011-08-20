@@ -18,7 +18,7 @@ public class SplashActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.splash);
         
-        ImageView rotateImgView = (ImageView)this.findViewById(R.id.rotate_img);
+        ImageView rotateImgView = (ImageView)this.findViewById(R.id.board_img);
         Animation rotate_out = AnimationUtils.loadAnimation(this, R.anim.rotate_out);
         rotate_out.setAnimationListener(new AnimationListener() {
 			

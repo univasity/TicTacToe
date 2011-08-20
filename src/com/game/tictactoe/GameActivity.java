@@ -3,6 +3,7 @@ package com.game.tictactoe;
 import java.util.Random;
 
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -54,13 +55,14 @@ public class GameActivity extends Activity implements OnTouchListener, OnClickLi
 	private Handler mHandler = new Handler(){
 		public void handleMessage(Message msg){
 			if(msg.what==MSG_AUTOMOVE){
-				int rivalId = curTurns==PlayerTuns?2:1;
-				int selfId = curTurns==PlayerTuns?1:2;
-				int restId = 0;
+				int rivalId = curTurns==PlayerTuns?Controller.ComputerId:Controller.PlayerId;
+				int selfId = curTurns==PlayerTuns?Controller.PlayerId:Controller.ComputerId;
+				int restId = Controller.RestId;
 				int nextStep = Controller.getNextStep(boardMap, rivalId, selfId, restId);
+				Log.i(LOG_TAG, "nextStep..."+nextStep);
 				if(nextStep!=-1){
 					points[nextStep].setImageResource(curTurns==PlayerTuns?getPlayerPointId():getComputerPointId());
-					boardMap[nextStep] = curTurns==PlayerTuns?1:2;
+					boardMap[nextStep] = curTurns==PlayerTuns?Controller.PlayerId:Controller.ComputerId;
 					checkWin();
 					if(!isGameOver){
 						notifyForNextTurns();
@@ -119,7 +121,7 @@ public class GameActivity extends Activity implements OnTouchListener, OnClickLi
 				&& boardMap[id-R.id.pos0]==0)
 				{
 					((ImageView)v).setImageResource(curTurns==PlayerTuns?getPlayerPointId():getComputerPointId());
-					boardMap[id-R.id.pos0] = curTurns==PlayerTuns?1:2;
+					boardMap[id-R.id.pos0] = curTurns==PlayerTuns?Controller.PlayerId:Controller.ComputerId;
 					checkWin();
 					if(!isGameOver){
 						notifyForNextTurns();
@@ -219,8 +221,37 @@ public class GameActivity extends Activity implements OnTouchListener, OnClickLi
 			break;
 		}
 		
-		resultView.setBackgroundResource(resId);
-		resultView.setVisibility(View.VISIBLE);
+		if(resId!=-1){
+			resultView.setBackgroundResource(resId);
+			resultView.setVisibility(View.VISIBLE);
+		}
+		
+		final Dialog dialog = new Dialog(this, android.R.style.Theme_Dialog);
+		dialog.setContentView(R.layout.result_dialog);
+		ImageView imgView = (ImageView)dialog.findViewById(R.id.img);
+		TextView txtView = (TextView)dialog.findViewById(R.id.txt);
+		if(winCode==Deuce){
+			txtView.setText(R.string.txt_deuce);
+		}else{
+			if(curTurns==PlayerTuns){
+				// win
+				txtView.setText(R.string.txt_you_win);
+			}else{
+				// lose
+				txtView.setText(R.string.txt_you_lose);
+			}
+		}
+		(dialog.findViewById(R.id.dialog)).setOnTouchListener(new OnTouchListener() {
+			
+			@Override
+			public boolean onTouch(View v, MotionEvent event) {
+				if(event.getAction()==MotionEvent.ACTION_DOWN){
+					dialog.dismiss();
+				}
+				return false;
+			}
+		});
+		dialog.show();
 	}
 
 	private int checkWin(int id){
@@ -315,6 +346,7 @@ public class GameActivity extends Activity implements OnTouchListener, OnClickLi
 	 */
 	private void backToMenu(){
 		Controller.startMenuActivity(this);
+		finish();
 	}
 
 	@Override

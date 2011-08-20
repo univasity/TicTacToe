@@ -53,7 +53,6 @@ public class MenuActivity extends Activity implements OnClickListener {
 			
 		case R.id.start_btn:
 			Controller.startGameActivity(this, selectPoint);
-			finish();
 			break;
 		}
 	}

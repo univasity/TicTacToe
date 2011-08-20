@@ -1,15 +1,23 @@
 package com.game.tictactoe;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 
 public class Controller {
 
+	static final String LOG_TAG = Controller.class.getSimpleName();
+	
 	public static final int CirclePoint = 1;
 	public static final int CrossPoint = 2;
+	
+	public static final int RestId = 0;
+	public static final int PlayerId = 1;
+	public static final int ComputerId = 2;
 	
 	/**
 	 * Æô¶¯²Ëµ¥½çÃæ
@@ -42,128 +50,162 @@ public class Controller {
 	}
 	
 	public static int getNextStep(int[] boardMap, final int rivalId, final int selfId, final int restId){
-//		// ·ÀÊØ
-//		int result = findMatch(boardMap, rivalId, 2);
-//		if(result!=NoMatch){
-//			int[] warning = findRestPosition(boardMap, result, restId);
-//			if(warning!=null && warning.length!=0){
-//				return warning[0];
+		Log.i(LOG_TAG, "getNextStep...rival:"+rivalId+"..self:"+selfId);
+		// ±ØÊ¤
+		for(int at : findMatch(boardMap, selfId, 2)){
+			int[] winPos = findRestPosition(boardMap, at, restId);
+			Log.i(LOG_TAG, "win...At:"+at+"..len:"+winPos.length);
+			if(winPos!=null && winPos.length!=0){
+				Log.i(LOG_TAG, "win..."+winPos[0]);
+				return winPos[0];
+			}
+		}
+		
+		// ·ÀÊØ
+		for(int at : findMatch(boardMap, rivalId, 2)){
+			int[] warning = findRestPosition(boardMap, at, restId);
+			Log.i(LOG_TAG, "lose...At:"+at+"..len:"+warning.length);
+			if(warning!=null && warning.length!=0){
+				Log.i(LOG_TAG, "lose..."+warning[0]);
+				return warning[0];
+			}
+		}
+		
+		// Ëæ»ú½ø¹¥
+		for(int at : findMatch(boardMap, selfId, 1)){
+			int[] restPos = findRestPosition(boardMap, at, restId);
+			if(restPos!=null && restPos.length!=0){
+				Log.i(LOG_TAG, "rnd_1..."+restPos[0]);
+				return restPos[0];
+			}
+		}
+		ArrayList<Integer> restMap = new ArrayList<Integer>();
+		for(int i=boardMap.length-1; i>=0; i--){
+			if(boardMap[i]==0){
+				restMap.add(i);
+			}
+		}
+		Random rnd = new Random(System.currentTimeMillis());
+		return restMap.get((rnd.nextInt()>>>1)%restMap.size());
+		
+//		ArrayList<Integer>[] restMap = new ArrayList[8];
+//		int rivalCount = 0;
+//		int selfCount = 0;
+//		int id = -1;
+//		// ºá
+//		for(int row=0; row<3; row++){
+//			rivalCount = 0;
+//			selfCount = 0;
+//			id++;
+//			for(int col=0; col<3; col++){
+//				int index = row*3+col;
+//				if(boardMap[index]==rivalId){
+//					rivalCount++;
+//				}else
+//				if(boardMap[index]==selfId){
+//					selfCount++;
+//				}else
+//				if(boardMap[index]==restId){
+//					if(restMap[id]==null){
+//						restMap[id] = new ArrayList<Integer>();
+//					}
+//					restMap[id].add(index);
+//					if(selfCount>1 || rivalCount>1){
+//						Log.i(LOG_TAG, "horizontal...s:"+selfCount+" r:"+rivalCount+"..."+index);
+//						return index;
+//					}
+//				}
 //			}
-//		}else{
-//			// ½ø¹¥
-//			result = findMatch(boardMap, selfId, 2);
-//			
+//			Log.i(LOG_TAG, "row:"+row+"...s:"+selfCount+" r:"+rivalCount);
 //		}
-		ArrayList<Integer>[] restMap = new ArrayList[8];
-		int rivalCount = 0;
-		int selfCount = 0;
-		int id = -1;
-		// ºá
-		for(int row=0; row<3; row++){
-			rivalCount = 0;
-			selfCount = 0;
-			id++;
-			for(int col=0; col<3; col++){
-				int index = row*3+col;
-				if(boardMap[index]==rivalId){
-					rivalCount++;
-				}else
-				if(boardMap[index]==selfId){
-					selfCount++;
-				}else
-				if(boardMap[index]==restId){
-					if(restMap[id]==null){
-						restMap[id] = new ArrayList<Integer>();
-					}
-					restMap[id].add(index);
-					if(selfCount>1 || rivalCount>1){
-						return index;
-					}
-				}
-			}
-		}
-		// ×Ý
-		for(int col=0; col<3; col++){
-			rivalCount = 0;
-			selfCount = 0;
-			id++;
-			for(int row=0; row<3; row++){
-				int index = row*3+col;
-				if(boardMap[index]==rivalId){
-					rivalCount++;
-				}else
-				if(boardMap[index]==selfId){
-					selfCount++;
-				}else
-				if(boardMap[index]==restId){
-					if(restMap[id]==null){
-						restMap[id] = new ArrayList<Integer>();
-					}
-					restMap[id].add(index);
-					if(selfCount>1 || rivalCount>1){
-						return index;
-					}
-				}
-			}
-		}
-		// ½»²æ
-		rivalCount = 0;
-		selfCount = 0;
-		id++;
-		for(int i=0; i<3; i++){
-			int index = i*3+i;
-			if(boardMap[index]==rivalId){
-				rivalCount++;
-			}else
-			if(boardMap[index]==selfId){
-				selfCount++;
-			}else
-			if(boardMap[index]==restId){
-				if(restMap[id]==null){
-					restMap[id] = new ArrayList<Integer>();
-				}
-				restMap[id].add(index);
-				if(selfCount>1 || rivalCount>1){
-					return index;
-				}
-			}
-		}
-		
-		rivalCount = 0;
-		selfCount = 0;
-		id++;
-		for(int i=0; i<3; i++){
-			int index = (3-i-1)*3+i;
-			if(boardMap[index]==rivalId){
-				rivalCount++;
-			}else
-			if(boardMap[index]==selfId){
-				selfCount++;
-			}else
-			if(boardMap[index]==restId){
-				if(restMap[id]==null){
-					restMap[id] = new ArrayList<Integer>();
-				}
-				restMap[id].add(index);
-				if(selfCount>1 || rivalCount>1){
-					return index;
-				}
-			}
-		}
-		
-		int maxSize = 0;
-		int maxIndex = -1;
-		for(int i=restMap.length-1; i>=0; i--){
-			if(restMap[i]!=null && restMap[i].size()>maxSize){
-				maxSize = restMap[i].size();
-				maxIndex = i;
-			}
-		}
-		if(maxIndex!=-1){
-			return restMap[maxIndex].get(0);
-		}
-		
-		return -1;
+//		// ×Ý
+//		for(int col=0; col<3; col++){
+//			rivalCount = 0;
+//			selfCount = 0;
+//			id++;
+//			for(int row=0; row<3; row++){
+//				int index = row*3+col;
+//				if(boardMap[index]==rivalId){
+//					rivalCount++;
+//				}else
+//				if(boardMap[index]==selfId){
+//					selfCount++;
+//				}else
+//				if(boardMap[index]==restId){
+//					if(restMap[id]==null){
+//						restMap[id] = new ArrayList<Integer>();
+//					}
+//					restMap[id].add(index);
+//					if(selfCount>1 || rivalCount>1){
+//						Log.i(LOG_TAG, "vertical...s:"+selfCount+" r:"+rivalCount+"..."+index);
+//						return index;
+//					}
+//				}
+//			}
+//			Log.i(LOG_TAG, "col:"+col+"...s:"+selfCount+" r:"+rivalCount);
+//		}
+//		// ½»²æ
+//		rivalCount = 0;
+//		selfCount = 0;
+//		id++;
+//		for(int i=0; i<3; i++){
+//			int index = i*3+i;
+//			if(boardMap[index]==rivalId){
+//				rivalCount++;
+//			}else
+//			if(boardMap[index]==selfId){
+//				selfCount++;
+//			}else
+//			if(boardMap[index]==restId){
+//				if(restMap[id]==null){
+//					restMap[id] = new ArrayList<Integer>();
+//				}
+//				restMap[id].add(index);
+//				if(selfCount>1 || rivalCount>1){
+//					Log.i(LOG_TAG, "leftcross...s:"+selfCount+" r:"+rivalCount+"..."+index);
+//					return index;
+//				}
+//			}
+//		}
+//		Log.i(LOG_TAG, "leftcross...s:"+selfCount+" r:"+rivalCount);
+//		
+//		rivalCount = 0;
+//		selfCount = 0;
+//		id++;
+//		for(int i=0; i<3; i++){
+//			int index = (3-i-1)*3+i;
+//			if(boardMap[index]==rivalId){
+//				rivalCount++;
+//			}else
+//			if(boardMap[index]==selfId){
+//				selfCount++;
+//			}else
+//			if(boardMap[index]==restId){
+//				if(restMap[id]==null){
+//					restMap[id] = new ArrayList<Integer>();
+//				}
+//				restMap[id].add(index);
+//				if(selfCount>1 || rivalCount>1){
+//					Log.i(LOG_TAG, "rightcross...s:"+selfCount+" r:"+rivalCount+"..."+index);
+//					return index;
+//				}
+//			}
+//		}
+//		Log.i(LOG_TAG, "rightcross...s:"+selfCount+" r:"+rivalCount);
+//		
+//		int maxSize = 0;
+//		int maxIndex = -1;
+//		for(int i=restMap.length-1; i>=0; i--){
+//			if(restMap[i]!=null && restMap[i].size()>maxSize){
+//				maxSize = restMap[i].size();
+//				maxIndex = i;
+//			}
+//		}
+//		if(maxIndex!=-1){
+//			return restMap[maxIndex].get(0);
+//		}
+//		
+//		return -1;
 	}
 	
 	static final int NoMatch = 0;
@@ -183,7 +225,8 @@ public class Controller {
 	 * @param matchNum
 	 * @return
 	 */
-	public static int findMatch(int[] boardMap, int targetId, int matchNum){
+	public static int[] findMatch(int[] boardMap, int targetId, int matchNum){
+		ArrayList<Integer> matches = new ArrayList<Integer>();
 		int counter = 0;
 		// ºá
 		for(int row=0; row<3; row++){
@@ -196,11 +239,14 @@ public class Controller {
 			if(counter==matchNum){
 				switch(row){
 				case 0:
-					return Row1;
+					matches.add(Row1);
+					break;
 				case 1:
-					return Row2;
+					matches.add(Row2);
+					break;
 				case 2:
-					return Row3;
+					matches.add(Row3);
+					break;
 				}
 			}
 		}
@@ -215,11 +261,14 @@ public class Controller {
 			if(counter==matchNum){
 				switch(col){
 				case 0:
-					return Col1;
+					matches.add(Col1);
+					break;
 				case 1:
-					return Col2;
+					matches.add(Col2);
+					break;
 				case 2:
-					return Col3;
+					matches.add(Col3);
+					break;
 				}
 			}
 		}
@@ -231,7 +280,7 @@ public class Controller {
 			}
 		}
 		if(counter==matchNum){
-			return LeftCross;
+			matches.add(LeftCross);
 		}
 		counter = 0;
 		for(int i=0; i<3; i++){
@@ -240,10 +289,14 @@ public class Controller {
 			}
 		}
 		if(counter==matchNum){
-			return RightCross;
+			matches.add(RightCross);
 		}
 		
-		return NoMatch;
+		int[] result = new int[matches.size()];
+		for(int i=result.length-1; i>=0; i--){
+			result[i] = matches.get(i);
+		}
+		return result;
 	}
 	
 	/**
@@ -256,20 +309,22 @@ public class Controller {
 	public static int[] findRestPosition(int[] boardMap, int at, int restId){
 		ArrayList<Integer> result = new ArrayList<Integer>();
 		if(at==Row1 || at==Row2 || at==Row3){
-			int row = at==Row1?0:(at==Row2?1:3);
+			int row = at==Row1?0:(at==Row2?1:2);
+			Log.i(LOG_TAG, "findRest...row"+row);
 			for(int col=0; col<3; col++){
 				int index = row*3+col;
 				if(boardMap[index]==restId){
-					result.add(boardMap[index]);
+					Log.i(LOG_TAG, "findRest...index"+index+"..."+boardMap[index]);
+					result.add(index);
 				}
 			}
 		}else
 		if(at==Col1 || at==Col2 || at==Col3){
-			int col = at==Col1?0:(at==Col2?1:3);
+			int col = at==Col1?0:(at==Col2?1:2);
 			for(int row=0; row<3; row++){
 				int index = row*3+col;
 				if(boardMap[index]==restId){
-					result.add(boardMap[index]);
+					result.add(index);
 				}
 			}
 		}else
@@ -277,7 +332,7 @@ public class Controller {
 			for(int i=0; i<3; i++){
 				int index = i*3+i;
 				if(boardMap[index]==restId){
-					result.add(boardMap[index]);
+					result.add(index);
 				}
 			}
 		}else
@@ -285,7 +340,7 @@ public class Controller {
 			for(int i=0; i<3; i++){
 				int index = (3-i-1)*3+i;
 				if(boardMap[index]==restId){
-					result.add(boardMap[index]);
+					result.add(index);
 				}
 			}
 		}

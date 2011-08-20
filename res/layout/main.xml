@@ -4,32 +4,31 @@
 	android:layout_height="fill_parent"
 	android:background="@android:color/darker_gray">
 	
-	<LinearLayout
-		android:layout_width="fill_parent" 
-		android:layout_height="wrap_content"
-		android:orientation="vertical">
-		
-		<!-- 棋盘 -->
+	<!-- 棋盘 -->
 		<include layout="@layout/board" 
-			android:layout_width="200dp" 
-			android:layout_height="200dp"
-			android:layout_gravity="center"
-			android:layout_marginTop="10dp"
+			android:layout_width="@dimen/board_size" 
+			android:layout_height="@dimen/board_size"
+			android:layout_centerInParent="true"
+			android:id="@+id/board"
 		/>
 
         <!-- 状态栏 -->
-		<RelativeLayout 
+		<LinearLayout 
 			android:layout_width="fill_parent"
 			android:layout_height="wrap_content"
-			android:layout_margin="5dp">
+			android:orientation="horizontal"
+			android:layout_margin="10dp"
+			android:layout_above="@id/board">
 			
 			<!-- 玩家状态 -->
 			<LinearLayout 
-				android:layout_width="wrap_content"
+				android:layout_width="0px"
+				android:layout_weight="1"
 				android:layout_height="wrap_content" 
 				android:orientation="horizontal"
-				android:layout_alignParentLeft="true">
-				<ImageView
+				android:layout_alignParentLeft="true"
+				android:gravity="center">
+				<ImageView android:id="@+id/player_point"
 					android:layout_width="wrap_content"
 					android:layout_height="wrap_content" 
 				/>
@@ -37,16 +36,19 @@
 					android:layout_width="wrap_content"
 					android:layout_height="wrap_content"
 					android:text="@string/txt_player" 
+					android:textColor="@color/blue"
 				/>
 			</LinearLayout>
 			
 			<!-- 电脑状态 -->
 			<LinearLayout 
-				android:layout_width="wrap_content"
+				android:layout_width="0px"
+				android:layout_weight="1"
 				android:layout_height="wrap_content" 
 				android:orientation="horizontal"
-				android:layout_alignParentRight="true">
-				<ImageView 
+				android:layout_alignParentRight="true"
+				android:gravity="center">
+				<ImageView android:id="@+id/computer_point"
 					android:layout_width="wrap_content"
 					android:layout_height="wrap_content" 
 				/>
@@ -54,12 +56,11 @@
 					android:layout_width="wrap_content"
 					android:layout_height="wrap_content"
 					android:text="@string/txt_computer" 
+					android:textColor="@color/red"
 				/>
 			</LinearLayout>
 
-		</RelativeLayout>
-
-	</LinearLayout>
+		</LinearLayout>
 
 	<!-- 功能菜单栏 -->
 	<LinearLayout 

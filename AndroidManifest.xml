@@ -12,7 +12,7 @@
             </intent-filter>
         </activity>
 
-    <activity android:name="MenuActivity"></activity>
+    <activity android:name="MenuActivity" android:launchMode="singleTop"></activity>
 <activity android:name="GameActivity" android:launchMode="singleTask" android:configChanges="orientation"></activity>
 </application>
     <uses-sdk android:minSdkVersion="8" />

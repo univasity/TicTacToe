@@ -7,4 +7,8 @@
     <string name="menu_goback">BackToMenu</string>
     <string name="txt_player">Player</string>
     <string name="txt_computer">Computer</string>
+    <string name="title_choose_point">Please choose your point:</string>
+    <string name="txt_deuce">Deuce!</string>
+    <string name="txt_you_win">You Win!</string>
+    <string name="txt_you_lose">You Lose!</string>
 </resources>
